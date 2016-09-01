@@ -1,0 +1,95 @@
+define B0( A, A_L, S ) = 1 - (S - A_L) / (A - A_L)
+define k( t, S, A, A_L, B ) = (- ln( (1 - (S - A_L) / (A - A_L)) / B ) / t)
+define monomolecular( t, A, A_L, B, k ) = A_L + (A - A_L) * (1 - B * exp(-k * t))
+
+obj tscale { t, scale };
+define tscale( t, scale ) {
+	local x;
+	obj tscale x;
+	x.t = t;
+	x.scale = scale;
+	return x;
+}
+
+
+
+## Common values.
+
+A_L = 0;
+S0 = 0.205253;
+
+
+
+## First, females.
+
+A_f = 1;
+
+ts_f = list(
+	tscale( 5, 0.594016 ),
+	tscale( 20, 0.950802 ),
+	tscale( 35, 0.991758 )
+);
+
+## Always 1...?
+B_f = B0( A_f, A_L, S0 );
+
+ks_f = list();
+
+for( i = 0; i < size( ts_f ); ++i ) {
+	append( ks_f, k( ts_f[[i]].t, ts_f[[i]].scale, A_f, A_L, B_f ) );
+}
+
+k_f = avg( ks_f );
+
+Ss_f = list();
+
+for( i = 0; i < size( ts_f ); ++i ) {
+	append( Ss_f, monomolecular( ts_f[[i]].t, A_f, A_L, B_f, k_f ) );
+}
+
+print "ks_f:", round( ks_f, 6 );
+print "ks_f average =", round( k_f, 6 );
+
+print "Comparison of scales, f:";
+
+for( i = 0; i < size( ts_f ); ++i ) {
+	print "t =", ts_f[[i]].t, "  s =", ts_f[[i]].scale, "  s calced =", round( Ss_f[[i]], 6 ), "  diff =", round( Ss_f[[i]] - ts_f[[i]].scale, 6 );
+}
+
+
+
+## Males
+
+A_m = 0.991758;
+
+ts_m = list(
+	tscale( 5, 0.589984 ),
+	tscale( 20, 0.943070 ),
+	tscale( 35, 0.983601 )
+);
+
+## Always 1...?
+B_m = B0( A_m, A_L, S0 );
+
+ks_m = list();
+
+for( i = 0; i < size( ts_m ); ++i ) {
+	append( ks_m, k( ts_m[[i]].t, ts_m[[i]].scale, A_m, A_L, B_m ) );
+}
+
+k_m = avg( ks_m );
+
+Ss_m = list();
+
+for( i = 0; i < size( ts_m ); ++i ) {
+	append( Ss_m, monomolecular( ts_m[[i]].t, A_m, A_L, B_m, k_m ) );
+}
+
+print "ks_m:", round( ks_m, 6 );
+print "ks_m average =", round( k_m, 6 );
+
+print "Comparison of scales, m:";
+
+for( i = 0; i < size( ts_m ); ++i ) {
+	print "t =", ts_m[[i]].t, "  s =", ts_m[[i]].scale, "  s calced =", round( Ss_m[[i]], 6 ), "  diff =", round( Ss_m[[i]] - ts_m[[i]].scale, 6 );
+}
