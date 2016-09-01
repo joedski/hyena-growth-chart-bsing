@@ -12,7 +12,7 @@ import { growthChart as createGrowthChart } from './growth-mass-chart';
 
 const RESOLUTION = 1;
 // const TIME_SPAN = 60; // 10 years.
-const TIME_SPAN = 15 * 12; // 15 years.
+const TIME_SPAN = 30 * 12; // 15 years.
 
 function dataHyena( params ) {
 	let i = 0;
@@ -60,7 +60,8 @@ let dataDave = dataHyena( g.DAVE );
 let percent = d3.scale.linear().domain([ 0, 1 ]).range([ 0, 100 ])
 
 let babbiesMassCbrtScale = d3.scale.linear()
-	.domain([ g.BABBIES.S0, 1 ])
+	// .domain([ g.BABBIES.S0, 1 ])
+	.domain([ g.BABBIES.S0, g.BABBIES.A ])
 	// 65 kg = 143 lbs
 	.range([ Math.pow( g.BABBIES.m0, 1/3 ), Math.pow( g.BABBIES.mA, 1/3 ) ])
 	;
@@ -81,8 +82,8 @@ let babbiesLinearGrowth = c.sum(
 	),
 	c.scaledPaddedFn(
 		c.lerp( c.quad, c.inv( c.quart ) ),
-		14*12, 30*12, 0, g.BABBIES.A * 0.05, // percent; 95% -> 100%
-		1.1
+		13*12, 30*12, 0, g.BABBIES.A * 0.05, // percent; 95% -> 100%
+		1.5
 	)
 );
 

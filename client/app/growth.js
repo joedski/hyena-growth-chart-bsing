@@ -37,6 +37,8 @@ export const HYENA_FEMALE = {
 	// A: 1.0/1.05,
 	A_L: 0,
 	d: 1,
+	m0: 1.5,
+	mA: 70,
 };
 
 export const HYENA_MALE = {
@@ -45,7 +47,9 @@ export const HYENA_MALE = {
 	// A: 0.991758,
 	A: 0.991758 / 1.05, // when comparing percents.
 	A_L: 0,
-	d: 1
+	d: 1,
+	m0: 1.5,
+	mA: 65,
 };
 
 export const DAVE = {
@@ -56,6 +60,8 @@ export const DAVE = {
 	A: 1, // TEMP: Just comparing percents.
 	A_L: 0,
 	d: 2, // Dave and his ilk reach maturity at about 6 y/o rather than 3 y/o.
+	m0: 1.5,
+	mA: 70,
 };
 
 export const BABBIES = {

@@ -9,14 +9,19 @@
 </head>
 <body>
 	<div class="container">
-		<div class="hyena-chart panel panel-primary" style="margin-top: 10px;">
-			<div class="panel-heading"><h3 class="panel-title">Hyena Growth Chart</h3></div>
+		<h1>Amanda and Leday (Average)</h1>
+		<div class="hyena-chart panel panel-primary">
+			<div class="panel-heading"><h3 class="panel-title">Growth Chart</h3></div>
 			<div class="panel-body">
 				<svg id="hyena-chart-canvas" width="100%" height="500"></svg>
 			</div>
-			<div class="panel-footer"></div>
+			<div class="panel-footer">
+				<p>The values presented here are still a work in progress pending feedback and research.</p>
+				<p>The bars and left axis indicate the approximate body mass expected at a given age. The line and right axis indicate the linear growth, normalized to their expected maximum asymptotic growth; it is effectively to what percent their body has grown so far out of its total possible normal development.  The body mass is derived from the <em>un</em>normalized linear growth.</p>
+				<p>Age as indicated here is in months since birth, not conception.  This is why the numbers don't start at 0.</p>
+			</div>
 		</div>
-		<p class="text-muted">Graph is a monomolecular growth model BSed from <a href="http://jmammal.oxfordjournals.org/content/94/6/1298.figures-only">this article in the Oxford Journal</a>.  May not be accurately interpreted.  Most certainly being horribly abused.</p>
+		<p class="text-muted text-small">Graph uses a monomolecular growth model BSed from <a href="http://jmammal.oxfordjournals.org/content/94/6/1298.figures-only">this article in the Oxford Journal</a>.  May not be accurately interpreted.  Most certainly being horribly abused.</p>
 	</div>
 
 	<script src="app.js"></script>
