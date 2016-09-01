@@ -6,10 +6,13 @@
 import * as g from './growth';
 import * as d3 from 'd3';
 import * as nv from 'nvd3';
-import { growthChart as createGrowthChart } from './growth-chart';
+import * as c from './curves';
+// import { growthChart as createGrowthChart } from './growth-chart';
+import { growthChart as createGrowthChart } from './growth-mass-chart';
 
 const RESOLUTION = 1;
-const TIME_SPAN = 60; // 10 years.
+// const TIME_SPAN = 60; // 10 years.
+const TIME_SPAN = 15 * 12; // 15 years.
 
 function dataHyena( params ) {
 	let i = 0;
@@ -32,10 +35,79 @@ function dataHyena( params ) {
 	return res;
 }
 
+function dataGeneral( params ) {
+	let { fn } = params;
+	let n = (TIME_SPAN * RESOLUTION);
+	let t = i => TIME_SPAN * (i / n);
+	let res = [];
+
+	for( let i = 0; i <= n; ++i ) {
+		let ti = t( i );
+		res.push({
+			x: ti,
+			y: fn( ti ),
+		});
+	}
+
+	return res;
+}
+
 let dataAvgFemale = dataHyena( g.HYENA_FEMALE );
-// let dataAvgMale = dataHyena( g.HYENA_MALE );
+let dataAvgMale = dataHyena( g.HYENA_MALE );
 let dataDave = dataHyena( g.DAVE );
-let dataBabbies = dataHyena( g.BABBIES );
+// let dataBabbies = dataHyena( g.BABBIES );
+
+let percent = d3.scale.linear().domain([ 0, 1 ]).range([ 0, 100 ])
+
+let babbiesMassCbrtScale = d3.scale.linear()
+	.domain([ g.BABBIES.S0, 1 ])
+	// 65 kg = 143 lbs
+	.range([ Math.pow( g.BABBIES.m0, 1/3 ), Math.pow( g.BABBIES.mA, 1/3 ) ])
+	;
+
+let babbiesMassScale = c.comp( c.cube, babbiesMassCbrtScale );
+let babbiesLinearGrowth = c.sum(
+	g.monomolecular( g.BABBIES.A * 0.75, g.BABBIES.A_L, g.BABBIES.S0, g.BABBIES.k, g.BABBIES.d ),
+	c.scaledPaddedFn(
+		// c.querp( c.quad, c.inv( c.quart ) ),
+		c.lerp( c.quad, c.inv( c.quart ) ),
+		12, 8 * 12, 0, g.BABBIES.A * 0.07, // percent; 75% -> 85%
+		1.5
+	),
+	c.scaledPaddedFn(
+		c.querp( c.quad, c.inv( c.quart ) ),
+		8 * 12, 14 * 12, 0, g.BABBIES.A * 0.13, // percent; 85% -> 95%
+		1.5
+	),
+	c.scaledPaddedFn(
+		c.lerp( c.quad, c.inv( c.quart ) ),
+		14*12, 30*12, 0, g.BABBIES.A * 0.05, // percent; 95% -> 100%
+		1.1
+	)
+);
+
+let babbiesLinearGrowthNormalized = c.comp(
+	d3.scale.linear().domain([ 0, g.BABBIES.A ]).range([ 0, 1 ]),
+	babbiesLinearGrowth
+);
+
+let babbiesMassGrowth = c.comp( babbiesMassScale, babbiesLinearGrowth );
+
+// let dataBabbies = dataGeneral({
+// 	fn: babbiesLinearGrowth,
+// });
+
+// let curvesTest = dataGeneral({
+// 	fn: c.scaledFn(
+// 		// c.lerp( c.quad, c.inv( c.quad ) ),
+// 		// c.lerp( c.quad, c.inv( c.quad ) ),
+// 		c.lerp( c.quad, c.inv( c.quart ) ),
+// 		10, TIME_SPAN - 10, 0, 100 // TEMP: Just comparing percents.
+// 	),
+// 	// fn: t => c.sum(
+// 	// 	g.monomolecular( g.BABBIES.A, g.BABBIES.A_L, g.BABBIES.S0, g.BABBIES.k, g.BABBIES.d ),
+// 	// ),
+// });
 
 let selChartCanvas = () => d3.select( '#hyena-chart-canvas' );
 let chartSize = () => ({
@@ -49,22 +121,36 @@ let data = [
 	// 	key: "Average Male",
 	// 	color: '#3390A5'
 	// },
+	// {
+	// 	values: dataAvgFemale,
+	// 	// key: "Average Female",
+	// 	key: "Average Feral", // TEMP: Just comparing percents.
+	// 	color: '#CE4050'
+	// },
+	// {
+	// 	values: dataDave,
+	// 	key: "Dave",
+	// 	color: '#E09655'
+	// },
 	{
-		values: dataAvgFemale,
-		// key: "Average Female",
-		key: "Average Feral", // TEMP: Just comparing percents.
+		// values: dataBabbies,
+		// values: dataGeneral({ fn: babbiesLinearGrowth }),
+		values: dataGeneral({ fn: c.comp( percent, babbiesLinearGrowthNormalized ) }),
+		key: "Normalized Linear Growth",
+		// color: '#73B26B'
 		color: '#CE4050'
 	},
 	{
-		values: dataDave,
-		key: "Dave",
-		color: '#E09655'
+		values: dataGeneral({ fn: babbiesMassGrowth }),
+		bar: true,
+		key: "Mass",
+		color: '#3390A5',
 	},
-	{
-		values: dataBabbies,
-		key: "Amanda + Leday?",
-		color: '#73B26B'
-	}
+	// {
+	// 	values: curvesTest,
+	// 	key: "Curves Test",
+	// 	color: '#821C68',
+	// }
 ];
 
 let growthChart = createGrowthChart({

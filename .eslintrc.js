@@ -1,20 +1,20 @@
 module.exports = {
   "extends": [
     "eslint:recommended",
-    "plugin:react/recommended"
+    // "plugin:react/recommended"
   ],
   "parser": "babel-eslint",
   "parserOptions": {
     "ecmaVersion": 6,
     "sourceType": "module",
     "ecmaFeatures": {
-      "jsx": true,
+      // "jsx": true,
       "impliedStrict": true,
-      "modules": true
+      // "modules": true
     }
   },
   "plugins": [
-    "react"
+    // "react"
   ],
   "env": {
     "browser": true,

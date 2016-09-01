@@ -23,17 +23,24 @@ export function growthChart( options ) {
 			let chartOptions = {
 				// duration: 250,
 				useInteractiveGuideline: true,
+				focusEnable: false,
+				margin: { right: 45, bottom: 40 },
 			};
 
 			if( options.forceY ) {
 				chartOptions.forceY = options.forceY;
 			}
 
-			chart = nv.models.lineChart()
+			chart = nv.models.linePlusBarChart()
 				.options( chartOptions )
 				;
 
 			chart.xAxis
+				.axisLabel( 'Age (Months)' )
+				.tickFormat( d3.format( '.02f' ) )
+				;
+
+			chart.x2Axis
 				.axisLabel( 'Age (Months)' )
 				.tickFormat( d3.format( '.02f' ) )
 				;
@@ -45,9 +52,19 @@ export function growthChart( options ) {
 
 			// TEMP: Just comparing percents.
 			let yAF = d3.format( '.01f' );
-			chart.yAxis
+			chart.y2Axis
 				.axisLabel( 'Percent Body Growth (rel to Dave)' )
 				.tickFormat( v => yAF( v ) + '%' )
+				;
+
+			chart.y1Axis
+				.axisLabel( 'Approximate Body Mass' )
+				.tickFormat( v => yAF( v ) + 'kg' )
+				;
+
+			chart.bars
+				.forceY([ 0 ])
+				.padData( false )
 				;
 
 			if( initialData.length ) {
