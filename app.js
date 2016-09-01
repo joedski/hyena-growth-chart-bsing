@@ -1,6 +1,160 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
+/*
+Typical use of these functions:
+
+import * as c from 'curves';
+let sigmoid2 = c.lerp( c.quad, c.inv( c.quad ) );
+let sigmoid2Piecewise = c.scaledFn( sigmoid2, 0, 25, 1, 13 );
+ */
+
+//////// Basic Functions
+
+// These functions are all unscaled, and should all have:
+// - domain of [0, 1]
+// - range of [0, 1]
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+exports.interpLinear = interpLinear;
+exports.linear = linear;
+exports.quad = quad;
+exports.cube = cube;
+exports.quart = quart;
+exports.interpWith = interpWith;
+exports.interp = interp;
+exports.lerp = lerp;
+exports.querp = querp;
+exports.inv = inv;
+exports.power = power;
+exports.piecewise = piecewise;
+exports.sum = sum;
+exports.comp = comp;
+exports.scaledFn = scaledFn;
+exports.scaledPaddedFn = scaledPaddedFn;
+function interpLinear(a, b, t) {
+	return (1 - t) * a + t * b;
+}
+
+function linear(t) {
+	return t;
+}
+
+function quad(t) {
+	return t * t;
+}
+
+function cube(t) {
+	return t * t * t;
+}
+
+function quart(t) {
+	var t2 = t * t;
+	return t2 * t2;
+}
+
+//////// Higher Order Functions
+
+function interpWith(tfn) {
+	return function interpArb(a, b, t) {
+		return interpLinear(a, b, tfn(t));
+	};
+}
+
+function interp(fnInterp, fnA, fnB) {
+	return function interpAt(t) {
+		return fnInterp(fnA(t), fnB(t), t);
+		// return lerp( fnA( t ), fnB( t ), fnInterp( 0, 1, t ) );
+	};
+}
+
+function lerp(fnA, fnB) {
+	return interp(interpLinear, fnA, fnB);
+}
+
+function querp(fnA, fnB) {
+	var iqfn = lerp(quad, inv(quad));
+	return interp(interpWith(iqfn), fnA, fnB);
+}
+
+function inv(fn) {
+	return function invFn(t) {
+		return 1 - fn(1 - t);
+	};
+}
+
+function power(n) {
+	return function powerOf(t) {
+		return Math.pow(t, n);
+	};
+}
+
+function piecewise(fn) {
+	return function piecewiseAt(t) {
+		if (t <= 0) return 0;else if (t >= 1) return 1;else return fn(t);
+	};
+}
+
+//////// Composers
+
+function sum() {
+	for (var _len = arguments.length, fns = Array(_len), _key = 0; _key < _len; _key++) {
+		fns[_key] = arguments[_key];
+	}
+
+	return function summationAt(t) {
+		return fns.reduce(function sumFn(res, fn) {
+			return res + fn(t);
+		}, 0);
+	};
+}
+
+function comp() {
+	for (var _len2 = arguments.length, fns = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+		fns[_key2] = arguments[_key2];
+	}
+
+	return function copositionAt(t) {
+		return fns.reduceRight(function compFn(res, fn) {
+			return fn(res);
+		}, t);
+	};
+}
+
+//////// Piecewise functions to use in graphs.
+
+function scaledFn(fn, t0, t1, f0, f1) {
+	var tSpan = t1 - t0;
+	var fSpan = f1 - f0;
+	var pfn = piecewise(fn);
+	return function sigmoidAt(t) {
+		var tScaled = (t - t0) / tSpan;
+		return pfn(tScaled) * fSpan + f0;
+	};
+}
+
+// Padds the t-value out by the given proportion fracPadding.
+// fracPadding = 1.2 would scale the t domain by 1.2.
+function scaledPaddedFn(fn, t0, t1, f0, f1, fracPadding) {
+	var tSpanUnscaled = t1 - t0;
+	var tSpan = tSpanUnscaled * fracPadding;
+	var tSpanDiff = (tSpan - tSpanUnscaled) / 2;
+	var fSpan = f1 - f0;
+	var t0d = t0 - tSpanDiff;
+	var t1d = t1 + tSpanDiff;
+	// let pfn = piecewise( fn );
+	// return function paddedSigmoidAt( t ) {
+	// 	let tScaled = (t - t0d) / tSpan;
+	// 	return pfn( tScaled ) * fSpan + f0;
+	// }
+	return scaledFn(fn, t0d, t1d, f0, f1);
+}
+
+},{}],2:[function(require,module,exports){
+'use strict';
+
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
@@ -42,16 +196,20 @@ function growthChart(options) {
 
 			var chartOptions = {
 				// duration: 250,
-				useInteractiveGuideline: true
+				useInteractiveGuideline: true,
+				focusEnable: false,
+				margin: { right: 45, bottom: 40 }
 			};
 
 			if (options.forceY) {
 				chartOptions.forceY = options.forceY;
 			}
 
-			chart = nv.models.lineChart().options(chartOptions);
+			chart = nv.models.linePlusBarChart().options(chartOptions);
 
 			chart.xAxis.axisLabel('Age (Months)').tickFormat(d3.format('.02f'));
+
+			chart.x2Axis.axisLabel('Age (Months)').tickFormat(d3.format('.02f'));
 
 			// chart.yAxis
 			// 	.axisLabel( 'Linear Dimension Growth' )
@@ -60,9 +218,15 @@ function growthChart(options) {
 
 			// TEMP: Just comparing percents.
 			var yAF = d3.format('.01f');
-			chart.yAxis.axisLabel('Percent Body Growth').tickFormat(function (v) {
+			chart.y2Axis.axisLabel('Percent Body Growth (rel to Dave)').tickFormat(function (v) {
 				return yAF(v) + '%';
 			});
+
+			chart.y1Axis.axisLabel('Approximate Body Mass').tickFormat(function (v) {
+				return yAF(v) + 'kg';
+			});
+
+			chart.bars.forceY([0]).padData(false);
 
 			if (initialData.length) {
 				this.updateData(initialData);
@@ -110,7 +274,7 @@ function growthChart(options) {
 	return chartObject;
 }
 
-},{"d3":4,"nvd3":5}],2:[function(require,module,exports){
+},{"d3":5,"nvd3":6}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -153,6 +317,7 @@ var HYENA_FEMALE = exports.HYENA_FEMALE = {
 	k: 0.135662,
 	S0: 0.205253,
 	A: 1.0,
+	// A: 1.0/1.05,
 	A_L: 0,
 	d: 1
 };
@@ -160,7 +325,8 @@ var HYENA_FEMALE = exports.HYENA_FEMALE = {
 var HYENA_MALE = exports.HYENA_MALE = {
 	k: 0.135662,
 	S0: 0.205253,
-	A: 0.991758,
+	// A: 0.991758,
+	A: 0.991758 / 1.05, // when comparing percents.
 	A_L: 0,
 	d: 1
 };
@@ -169,7 +335,8 @@ var DAVE = exports.DAVE = {
 	k: 0.135662,
 	S0: 0.205253,
 	// A: 1.03,
-	A: 1.0, // TEMP: Just comparing percents.
+	// A: 1.05,
+	A: 1, // TEMP: Just comparing percents.
 	A_L: 0,
 	d: 2 };
 
@@ -177,19 +344,25 @@ var BABBIES = exports.BABBIES = {
 	k: 0.135662,
 	S0: 0.205253,
 	// A: 1.05,
-	A: 0.75, // TEMP: Just comparing percents.
+	// A: 0.75, // TEMP: Just comparing percents.
+	A: 1.1,
 	A_L: 0,
-	d: 0.5 };
+	d: 0.6, // Dave and his ilk reach maturity at about 6 y/o rather than 3 y/o.
+	m0: 1.5, // kg
+	mA: 70 * 1.1 };
 
 var HANDLE_T = exports.HANDLE_T = 36;
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; // import * as d3 from 'd3';
 
 // import './bargraph-hori';
 // import './bargraph-vert-with-data';
+
+// import { growthChart as createGrowthChart } from './growth-chart';
+
 
 var _growth = require('./growth');
 
@@ -203,12 +376,17 @@ var _nvd = require('nvd3');
 
 var nv = _interopRequireWildcard(_nvd);
 
-var _growthChart = require('./growth-chart');
+var _curves = require('./curves');
+
+var c = _interopRequireWildcard(_curves);
+
+var _growthMassChart = require('./growth-mass-chart');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 var RESOLUTION = 1;
-var TIME_SPAN = 60; // 10 years.
+// const TIME_SPAN = 60; // 10 years.
+var TIME_SPAN = 15 * 12; // 15 years.
 
 function dataHyena(params) {
 	var i = 0;
@@ -233,10 +411,64 @@ function dataHyena(params) {
 	return res;
 }
 
+function dataGeneral(params) {
+	var fn = params.fn;
+
+	var n = TIME_SPAN * RESOLUTION;
+	var t = function t(i) {
+		return TIME_SPAN * (i / n);
+	};
+	var res = [];
+
+	for (var i = 0; i <= n; ++i) {
+		var ti = t(i);
+		res.push({
+			x: ti,
+			y: fn(ti)
+		});
+	}
+
+	return res;
+}
+
 var dataAvgFemale = dataHyena(g.HYENA_FEMALE);
-// let dataAvgMale = dataHyena( g.HYENA_MALE );
+var dataAvgMale = dataHyena(g.HYENA_MALE);
 var dataDave = dataHyena(g.DAVE);
-var dataBabbies = dataHyena(g.BABBIES);
+// let dataBabbies = dataHyena( g.BABBIES );
+
+var percent = d3.scale.linear().domain([0, 1]).range([0, 100]);
+
+var babbiesMassCbrtScale = d3.scale.linear().domain([g.BABBIES.S0, 1])
+// 65 kg = 143 lbs
+.range([Math.pow(g.BABBIES.m0, 1 / 3), Math.pow(g.BABBIES.mA, 1 / 3)]);
+
+var babbiesMassScale = c.comp(c.cube, babbiesMassCbrtScale);
+var babbiesLinearGrowth = c.sum(g.monomolecular(g.BABBIES.A * 0.75, g.BABBIES.A_L, g.BABBIES.S0, g.BABBIES.k, g.BABBIES.d), c.scaledPaddedFn(
+// c.querp( c.quad, c.inv( c.quart ) ),
+c.lerp(c.quad, c.inv(c.quart)), 12, 8 * 12, 0, g.BABBIES.A * 0.07, // percent; 75% -> 85%
+1.5), c.scaledPaddedFn(c.querp(c.quad, c.inv(c.quart)), 8 * 12, 14 * 12, 0, g.BABBIES.A * 0.13, // percent; 85% -> 95%
+1.5), c.scaledPaddedFn(c.lerp(c.quad, c.inv(c.quart)), 14 * 12, 30 * 12, 0, g.BABBIES.A * 0.05, // percent; 95% -> 100%
+1.1));
+
+var babbiesLinearGrowthNormalized = c.comp(d3.scale.linear().domain([0, g.BABBIES.A]).range([0, 1]), babbiesLinearGrowth);
+
+var babbiesMassGrowth = c.comp(babbiesMassScale, babbiesLinearGrowth);
+
+// let dataBabbies = dataGeneral({
+// 	fn: babbiesLinearGrowth,
+// });
+
+// let curvesTest = dataGeneral({
+// 	fn: c.scaledFn(
+// 		// c.lerp( c.quad, c.inv( c.quad ) ),
+// 		// c.lerp( c.quad, c.inv( c.quad ) ),
+// 		c.lerp( c.quad, c.inv( c.quart ) ),
+// 		10, TIME_SPAN - 10, 0, 100 // TEMP: Just comparing percents.
+// 	),
+// 	// fn: t => c.sum(
+// 	// 	g.monomolecular( g.BABBIES.A, g.BABBIES.A_L, g.BABBIES.S0, g.BABBIES.k, g.BABBIES.d ),
+// 	// ),
+// });
 
 var selChartCanvas = function selChartCanvas() {
 	return d3.select('#hyena-chart-canvas');
@@ -254,22 +486,32 @@ var data = [
 // 	key: "Average Male",
 // 	color: '#3390A5'
 // },
+// {
+// 	values: dataAvgFemale,
+// 	// key: "Average Female",
+// 	key: "Average Feral", // TEMP: Just comparing percents.
+// 	color: '#CE4050'
+// },
+// {
+// 	values: dataDave,
+// 	key: "Dave",
+// 	color: '#E09655'
+// },
 {
-	values: dataAvgFemale,
-	// key: "Average Female",
-	key: "Average Feral", // TEMP: Just comparing percents.
+	// values: dataBabbies,
+	// values: dataGeneral({ fn: babbiesLinearGrowth }),
+	values: dataGeneral({ fn: c.comp(percent, babbiesLinearGrowthNormalized) }),
+	key: "Normalized Linear Growth",
+	// color: '#73B26B'
 	color: '#CE4050'
 }, {
-	values: dataDave,
-	key: "Dave",
-	color: '#E09655'
-}, {
-	values: dataBabbies,
-	key: "Amanda + Leday?",
-	color: '#73B26B'
+	values: dataGeneral({ fn: babbiesMassGrowth }),
+	bar: true,
+	key: "Mass",
+	color: '#3390A5'
 }];
 
-var growthChart = (0, _growthChart.growthChart)({
+var growthChart = (0, _growthMassChart.growthChart)({
 	selection: selChartCanvas(),
 	// forceY: [ 0, 1.2 ],
 	forceY: [0, 110]
@@ -302,7 +544,7 @@ function logSize(chart) {
 	console.log('Margins:', JSON.stringify(margin));
 }
 
-},{"./growth":2,"./growth-chart":1,"d3":4,"nvd3":5}],4:[function(require,module,exports){
+},{"./curves":1,"./growth":3,"./growth-mass-chart":2,"d3":5,"nvd3":6}],5:[function(require,module,exports){
 !function() {
   var d3 = {
     version: "3.5.17"
@@ -9857,7 +10099,7 @@ function logSize(chart) {
   });
   if (typeof define === "function" && define.amd) this.d3 = d3, define(d3); else if (typeof module === "object" && module.exports) module.exports = d3; else this.d3 = d3;
 }();
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /* nvd3 version 1.8.4 (https://github.com/novus/nvd3) 2016-07-03 */
 (function(){
 
@@ -24569,7 +24811,7 @@ nv.models.sunburstChart = function() {
 
 nv.version = "1.8.4";
 })();
-},{"d3":4}]},{},[3])
+},{"d3":5}]},{},[4])
 
 
 //# sourceMappingURL=app.js.map
