@@ -27,7 +27,7 @@ const outputDir = 'public';
 const scriptsSourceDir = 'app';
 const stylesSourceDir = 'styles';
 
-const buildEnv = process.NODE_ENV;
+const buildEnv = process.env.NODE_ENV;
 
 
 
@@ -75,7 +75,7 @@ function site_scripts_main( watch ) {
 		;
 
 	if( buildEnv === 'production' ) {
-		bundler = bundler.transform( 'uglifyify' );
+		bundler = bundler.transform({ global: true }, 'uglifyify' );
 	}
 
 	if( watch ) {
