@@ -3,20 +3,24 @@
 'use strict';
 
 const path = require( 'path' );
+const fs = require( 'fs' );
 
 const gulp = require( 'gulp' );
 const gulpIf = require( 'gulp-if' );
 const gutil = require( 'gulp-util' );
+const hb = require( 'gulp-hb' );
 const less = require( 'gulp-less' );
 const sourcemaps = require( 'gulp-sourcemaps' );
 
 const postcss = require( 'gulp-postcss' );
 const autoprefixer = require( 'autoprefixer' );
 const cssnano = require( 'cssnano' );
+const merge = require( 'merge2' );
 
 const source = require( 'vinyl-source-stream' );
 const buffer = require( 'vinyl-buffer' );
 const browserify = require( 'browserify' );
+const buildUtils = require( './gulpscripts/util' );
 
 
 
@@ -26,6 +30,34 @@ const sourceDir = 'client';
 const outputDir = 'public';
 const scriptsSourceDir = 'app';
 const stylesSourceDir = 'styles';
+const mainEntry = `${ sourceDir }/${ scriptsSourceDir }/index.js`;
+
+function getPagesDirs() {
+  return fs.readdirSync( path.join( '.', 'client', 'pages' ) )
+    .map( d => ({
+      // page name for reasons.
+      pageName: d,
+      // Base source path.
+      sourceBase: path.join( sourceDir, 'pages', d ),
+      // Base dest path fragment, relative to the outputDir.
+      destBase: d,
+    }) )
+    .map( ds => Object.assign( ds, {
+      // Source JS file.
+      sourceJS: path.join( ds.sourceBase, 'index.js' ),
+      // Dest JS file.
+      destJS: path.join( `${ds.destBase}_files`, 'app.js' ),
+      // Dest HTML file.
+      destHTML: path.join( `${ds.destBase}.html` ),
+    }))
+    .map( ds => Object.assign( ds, {
+      // Used by the HTML template.
+      destJSRelative: path.relative( path.dirname( ds.destHTML ), ds.destJS ),
+    }))
+    ;
+}
+
+// const pagesDirs = getPagesDirs();
 
 const buildEnv = process.env.NODE_ENV;
 
@@ -51,7 +83,11 @@ gulp.task( 'watch-site', () => {
 		'site:styles',
 	]);
 
-	site_scripts_main( true );
+	// site_scripts_main( mainEntry, true );
+  // pagesEntryPoints.forEach()
+
+  site_scripts_main_all( true );
+  site_scripts_html_all( true );
 });
 
 
@@ -59,14 +95,58 @@ gulp.task( 'watch-site', () => {
 //////// Scripts
 
 gulp.task( 'site:scripts', [
-	'site:scripts:main'
+	'site:scripts:main',
+  'site:scripts:html',
 ]);
 
-gulp.task( 'site:scripts:main', () => site_scripts_main() );
+gulp.task( 'site:scripts:main', () => site_scripts_main_all() );
+
+gulp.task( 'site:scripts:html', () => site_scripts_html_all() );
+
+function site_scripts_html_all( watch ) {
+  function execTask() {
+    const pagesDirs = getPagesDirs();
+    const htmlTemplate = fs.readFileSync( path.join( sourceDir, 'templates', 'chart-page.hbs' ) );
+
+    gutil.log( `Building html files for ${pagesDirs.map( d => d.pageName ).join(', ')}`);
+
+    return new buildUtils.FileObjectEmitter({
+      files: pagesDirs,
+      factory: ( pageDir ) => {
+        const file = new gutil.File({
+          base: '',
+          cwd: '',
+          path: pageDir.destHTML,
+          contents: htmlTemplate,
+        });
+
+        file.data = {
+          appPath: pageDir.destJSRelative,
+        };
+
+        return file;
+      },
+    })
+    .pipe( hb() )
+    .pipe( gulp.dest( outputDir ) )
+    ;
+  }
+
+  if( ! watch ) return execTask();
+
+  gulp.watch([ `${sourceDir}/**/*` ], execTask );
+}
+
+function site_scripts_main_all( watch ) {
+  const pagesDirs = getPagesDirs();
+  return merge(
+    pagesDirs.map( pageDir => site_scripts_main( pageDir, watch ) )
+  );
+}
 
 // eslint-disable-next-line camelcase
-function site_scripts_main( watch ) {
-	let bundler = browserify( `${ sourceDir }/${ scriptsSourceDir }/index.js`, {
+function site_scripts_main( pageDir, watch ) {
+	let bundler = browserify( pageDir.sourceJS, {
 		debug: buildEnv !== 'production',
 		cache: {}, packageCache: {}
 	})
@@ -94,7 +174,8 @@ function site_scripts_main( watch ) {
 				if( err.codeFrame ) console.error( err.codeFrame );
 				this.emit( 'end' );
 			})
-			.pipe( source( 'app.js' ) )
+			// .pipe( source( 'app.js' ) )
+			.pipe( source( pageDir.destJS ) )
 			.pipe( buffer() )
 			;
 
@@ -179,4 +260,3 @@ gulp.task( 'site:styles', () => {
 		.pipe( gulp.dest( `${ outputDir }` ) )
 		;
 });
-

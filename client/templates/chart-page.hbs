@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>D3</title>
+	<link rel="stylesheet" href="bootstrap.css" />
+	<link rel="stylesheet" href="nv.d3.css" />
+	<link rel="stylesheet" href="hyena-chart.css" />
+</head>
+<body>
+	<div class="container">
+		<h1 id="page-header-title">D3</h1>
+		<div class="hyena-chart panel panel-primary">
+			<div id="chart-panel-header" class="panel-heading">
+        <h3 id="chart-panel-header-title" class="panel-title">Growth Chart</h3>
+      </div>
+			<div class="panel-body">
+				<svg id="hyena-chart-canvas" width="100%" height="500"></svg>
+			</div>
+			<div id="chart-panel-footer" class="panel-footer">
+			</div>
+		</div>
+		<p id="page-footer" class="text-muted text-small">
+      Graph uses a monomolecular growth model BSed from <a href="http://jmammal.oxfordjournals.org/content/94/6/1298.figures-only">this article in the Oxford Journal</a>.
+      May not be accurately interpreted.
+      Most certainly being horribly abused.
+      Also I slapped random sigmoids of various flavors all over it to make it fit other ideas, so, there's that too.
+    </p>
+	</div>
+
+	<script src="{{ appPath }}"></script>
+</body>
+</html>

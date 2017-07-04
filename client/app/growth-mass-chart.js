@@ -4,11 +4,31 @@ import * as nv from 'nvd3';
 // This is a factory to gather all the nv related stuff into one place.
 // All the interaction is haldled elsewhere.
 
-export function growthChart( options ) {
+export default function growthChart( options ) {
 	options = Object.assign({
 		// The element into which the chart will go.
 		selection: null,
 		forceY: null,
+    xAxis: {
+      label: "Age (months)",
+      formatter() {
+        return d3.format( '.02f' );
+      },
+    },
+    yAxisMass: {
+      label: "Approximate Body Mass",
+      formatter() {
+        const fmt = d3.format( '.01f' );
+        return v => `${fmt( v )}kg`;
+      },
+    },
+    yAxisLinear: {
+      label: "Percent Linear Body Growth",
+      formatter() {
+        const fmt = d3.format( '.01f' );
+        return v => `${fmt( v )}%`;
+      },
+    },
 	}, options );
 
 	if( ! options.selection ) {
@@ -24,7 +44,8 @@ export function growthChart( options ) {
 				// duration: 250,
 				useInteractiveGuideline: true,
 				focusEnable: false,
-				margin: { right: 45, bottom: 40 },
+				// margin: { right: 45, bottom: 40 },
+				margin: { left: 65, right: 80, bottom: 40 },
 			};
 
 			if( options.forceY ) {
@@ -36,13 +57,13 @@ export function growthChart( options ) {
 				;
 
 			chart.xAxis
-				.axisLabel( 'Age (Months)' )
-				.tickFormat( d3.format( '.02f' ) )
+				.axisLabel( options.xAxis.label )
+				.tickFormat( options.xAxis.formatter() )
 				;
 
 			chart.x2Axis
-				.axisLabel( 'Age (Months)' )
-				.tickFormat( d3.format( '.02f' ) )
+				.axisLabel( options.xAxis.label )
+				.tickFormat( options.xAxis.formatter() )
 				;
 
 			// chart.yAxis
@@ -51,15 +72,15 @@ export function growthChart( options ) {
 			// 	;
 
 			// TEMP: Just comparing percents.
-			let yAF = d3.format( '.01f' );
+			// let yAF = d3.format( '.01f' );
 			chart.y2Axis
-				.axisLabel( 'Percent Body Growth (rel to Dave)' )
-				.tickFormat( v => yAF( v ) + '%' )
+				.axisLabel( options.yAxisLinear.label )
+				.tickFormat( options.yAxisLinear.formatter() )
 				;
 
 			chart.y1Axis
-				.axisLabel( 'Approximate Body Mass' )
-				.tickFormat( v => yAF( v ) + 'kg' )
+				.axisLabel( options.yAxisMass.label )
+				.tickFormat( options.yAxisMass.formatter() )
 				;
 
 			chart.bars

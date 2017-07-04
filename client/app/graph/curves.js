@@ -83,28 +83,6 @@ export function piecewise( fn ) {
 
 
 
-//////// Composers
-
-export function sum( ...fns ) {
-	return function summationAt( t ) {
-		return fns.reduce(
-			function sumFn( res, fn ) { return res + fn( t ); },
-			0
-		);
-	};
-}
-
-export function comp( ...fns ) {
-	return function copositionAt( t ) {
-		return fns.reduceRight(
-			function compFn( res, fn ) { return fn( res ); },
-			t
-		);
-	}
-}
-
-
-
 //////// Piecewise functions to use in graphs.
 
 export function scaledFn( fn, t0, t1, f0, f1 ) {
@@ -123,13 +101,7 @@ export function scaledPaddedFn( fn, t0, t1, f0, f1, fracPadding ) {
 	let tSpanUnscaled = t1 - t0;
 	let tSpan = tSpanUnscaled * fracPadding;
 	let tSpanDiff = (tSpan - tSpanUnscaled) / 2;
-	let fSpan = f1 - f0;
 	let t0d = t0 - tSpanDiff;
 	let t1d = t1 + tSpanDiff;
-	// let pfn = piecewise( fn );
-	// return function paddedSigmoidAt( t ) {
-	// 	let tScaled = (t - t0d) / tSpan;
-	// 	return pfn( tScaled ) * fSpan + f0;
-	// }
 	return scaledFn( fn, t0d, t1d, f0, f1 );
 }

@@ -24,7 +24,7 @@ t  | scale    | k         | scale (back-calced)
 ++ | 1.000000 | n/a       | n/a
 ```
 
-Note: 
+Note:
 
 We're just going to assume B = 1.  A = 1 since the scale range is (0, 1). (though it may vary once we start dicking with things.)
 
@@ -66,7 +66,7 @@ Now, this is for the average female hyena.  The male starts out the same, but gr
 
 ### Male Average
 
-Now, we could draw more lines on the graph, but since S0[f] == S0[m], I'm going to just scale the domain of `[S0[f], A[f]]` `[S0[f], A[m]]` and be done with it.
+Now, we could draw more lines on the graph, but since `S0[f] == S0[m]`, I'm going to just scale the domain of `[S0[f], A[f]]` `[S0[f], A[m]]` and be done with it.
 
 The A of the average male is 0.991758, about a 1% difference.  (curious.)
 
@@ -112,9 +112,9 @@ Going back to [the Koya-Goshu](http://file.scirp.org/Html/2-2860008_38842.htm) f
 
 - `f(t) = A[L] + (A - A[L]) * (1 - B e^( -k ((t - µ) / d) ))^m`
 
-Since we already discarded a number of things over there, we could just stick A[L] back in, though technically this is incorrect as A[L] is an asymptote, not just a lower bounds.
+Since we already discarded a number of things over there, we could just stick `A[L]` back in, though technically this is incorrect as `A[L]` is an asymptote, not just a lower bounds.
 
-However, we do already have an A[L], which is `0.205253`.  Again, though, this is technically incorrect, as A[L] is supposed to represent the starting point of growth, which for mammals begins at conception rather than birth.
+However, we do already have an `A[L]`, which is `0.205253`.  Again, though, this is technically incorrect, as `A[L]` is supposed to represent the starting point of growth, which for mammals begins at conception rather than birth.
 
 But, BS!  So, this gives us this.
 
