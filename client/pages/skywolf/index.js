@@ -31,7 +31,7 @@ const baseSkywolfMassScale = growth.linearToMassScale(growth.baseSkywolf);
 const chartData = [
   {
     values: reifyData(spans, graph.utils.comp(
-      graph.utils.percentScale,
+      growth.linearToHeightScale(growth.baseSkywolf),
       baseSkywolfGrowth,
     )),
     key: "Height",
@@ -61,7 +61,7 @@ const chartData = [
 
 const growthChart = chart.createGrowthMassChart({
   selection: CANVAS_SELECTION,
-  forceY: [0, 110],
+  forceY: [0, 7.5],
   xAxis: {
     label: "Age (months)",
     formatter() {
@@ -80,7 +80,7 @@ const growthChart = chart.createGrowthMassChart({
     label: "Height Standing Up",
     formatter() {
       const fmt = d3.format( '.01f' );
-      return v => `${fmt(graph.utils.percentScale.invert(v) * 7)} ft`;
+      return v => `${fmt(v)} ft`;
     },
   },
 });
@@ -95,8 +95,7 @@ currentPage.setTitle("Skywolves!");
 currentPage.setPanelFooterContent(`
   <p>The values presented here are still a work in progress pending feedback and research.</p>
   <p>The bars and left axis indicate the approximate body mass expected at a given age.
-    The line and right axis indicate the linear growth, normalized to their expected maximum asymptotic growth;
-    it is effectively to what percent their body has grown so far out of its total possible normal development.
+    The line and right axis indicate the linear growth, expressed as their height in feet standing up.
     The body mass is derived from the <em>un</em>normalized linear growth.</p>
   <p>Age as indicated here is in months since birth, not conception.  This is why the numbers don't start at 0.</p>
 `);
