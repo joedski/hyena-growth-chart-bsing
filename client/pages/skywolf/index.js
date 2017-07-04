@@ -59,14 +59,21 @@ const chartData = [
   },
 ];
 
+const danAndXirahsBabbiesBirthDay = new graph.utils.PseudoDate('2017-04-01');
+
 const growthChart = chart.createGrowthMassChart({
   selection: CANVAS_SELECTION,
   forceY: [0, 7.5],
   xAxis: {
-    label: "Age (months)",
+    label: "Date",
     formatter() {
       const fmt = d3.format('.01f');
-      return v => `${fmt(v)} months`;
+      const dfmt = danAndXirahsBabbiesBirthDay.relativeFormatter();
+      return v => {
+        const yoff = Math.floor(v / 12);
+        const moff = v % 12;
+        return `${dfmt(v)} (+${yoff}y/${fmt(moff)}m)`;
+      };
     },
   },
   yAxisMass: {
@@ -92,7 +99,12 @@ nv.addGraph(() => {
 });
 
 currentPage.setTitle("Skywolves!");
+currentPage.setPanelTitle("Dan and Xirah's Kids");
 currentPage.setPanelFooterContent(`
+  <p>Their kids were born on April 1, 2017 our time, and the date values provided reflect that.
+    However, relative time-offsets are provided for more general reference.
+    Note that the calculated dates are themselves normalized approximations that are designed
+    to fit the yearly cycle more than exact months/days.</p>
   <p>The values presented here are still a work in progress pending feedback and research.</p>
   <p>The bars and left axis indicate the approximate body mass expected at a given age.
     The line and right axis indicate the linear growth, expressed as their height in feet standing up.

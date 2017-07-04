@@ -1,5 +1,3 @@
-import d3 from 'd3';
-
 import {
   graph,
   // chart,

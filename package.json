@@ -8,6 +8,7 @@
     "serve": "http-server public",
     "watch": "gulp watch",
     "babel-node": "babel-node",
+    "build:prod": "cross-env NODE_ENV=production gulp",
     "test": "ava"
   },
   "keywords": [],

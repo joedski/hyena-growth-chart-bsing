@@ -23,6 +23,60 @@ export function comp( ...fns ) {
 
 
 
+//////// Date
+
+/**
+ * Track normalized months and years,
+ * more or less ignoring that months have different numbers of days
+ * or that years are 365.25andchange days long, not 360 days.
+ * Since graphs made in this package track by months after birth rather than
+ * exact numbers of days, this is a reasonable compromise.
+ */
+export class PseudoDate {
+  constructor(start) {
+    if (start) {
+      start = new Date(start);
+    }
+    else {
+      start = new Date();
+    }
+
+    this._start = {
+      year: start.getFullYear(),
+      month: start.getMonth() + 1,
+      day: start.getDate(),
+    };
+
+    this._dmFmt = d3.format('02d');
+  }
+
+  offsetMonths(offset) {
+    // Since this is pseudotime, we can just freely convert to days by
+    // multiplying by a fixed factor of 30.
+    const offsetDays = offset * 30;
+
+    const dayWithExcess = this._start.day - 1 + offsetDays;
+    const monthWithExcess = this._start.month - 1 + Math.floor(dayWithExcess / 30);
+    const yearWithExcess = this._start.year + Math.floor(monthWithExcess / 12);
+
+    return {
+      // modulo after all carry-overs have been accounted for.
+      day: (dayWithExcess % 30) + 1,
+      month: (monthWithExcess % 12) + 1,
+      year: yearWithExcess,
+    };
+  }
+
+  relativeFormatter() {
+    return t => {
+      const offset = this.offsetMonths(t);
+      return `${offset.year}-${this._dmFmt(offset.month)}-${this._dmFmt(offset.day)}`;
+    };
+  }
+}
+
+
+
 //////// Some useful scales.
 
 /**
@@ -65,11 +119,14 @@ type SpanDef = {
   // Value this span starts from.
   // At least the first span must have a value here or else
   // all of the returned values will be NaN.
+  // For all spans after the first, this defaults to the last value
+  // yielded for the last span.
   from?: number,
   // Value this span runs until.
   to: number,
-  // Size of each step.
-  increment: number,
+  // Size of each increment.
+  // defaults to 1.
+  increment?: number,
 };
  */
 
